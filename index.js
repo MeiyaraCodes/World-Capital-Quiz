@@ -1,16 +1,37 @@
 import express from "express";
 import bodyParser from "body-parser";
-import pool from "./db.js"; // Import the database connection
+import pg from "pg";
 import "dotenv/config";
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // Needed for Render's managed PostgreSQL
+  },
+});
+
+// Test connection
+try {
+  const client = await pool.connect();
+  console.log('Connected to the database');
+  client.release();
+  console.error('Database connection error', err);
+}
+
+export default pool;
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
+const db = new pg.Client({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DB,
+  password: process.env.DB_PASSWORD,
+  port: process.env.PORT,
+});
 
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
-app.use(express.json());
-
+db.connect();
 let quiz = [
   { country: "France", capital: "Paris" },
   { country: "United Kingdom", capital: "London" },
