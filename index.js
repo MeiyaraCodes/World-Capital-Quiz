@@ -1,28 +1,15 @@
 import express from "express";
 import bodyParser from "body-parser";
-import pg from "pg";
-import dotenv from "dotenv";
+import pool from "./db.js"; // Import the database connection
+import "dotenv/config";
 
-dotenv.config();
-const { Pool } = pg;
+const app = express();
+const port = process.env.PORT || 3000;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
-
-// Test Database Connection
-async function testDBConnection() {
-  try {
-    const client = await pool.connect();
-    console.log("Connected to the database");
-    client.release();
-  } catch (err) {
-    console.error("Database connection error", err);
-  }
-}
-
-testDBConnection();
+app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use(express.json());
 
 // Express Setup
 const app = express();
