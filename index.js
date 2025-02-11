@@ -3,34 +3,68 @@ import bodyParser from "body-parser";
 import pool from "./db.js"; // Import the database connection
 import "dotenv/config";
 
+const app = express();
+const port = process.env.PORT || 3000;
+
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(express.json());
 
-// Express Setup
-const app = express();
-const port = process.env.PORT || 3000;
+let quiz = [
+  { country: "France", capital: "Paris" },
+  { country: "United Kingdom", capital: "London" },
+  { country: "United States of America", capital: "New York" },
+];
 
-let quiz = [];
+db.query("SELECT * FROM capitals", (err, res) => {
+  if (err) {
+    console.error("Error executing query", err.stack);
+  } else {
+    quiz = res.rows;
+  }
+});
+
 let totalCorrect = 0;
-let currentQuestion = {};
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// Fetch Quiz Data from DB
-async function fetchQuizData() {
-  try {
-    const result = await pool.query("SELECT * FROM capitals");
-    quiz = result.rows;
-  } catch (err) {
-    console.error("Error fetching quiz data:", err);
+let currentQuestion = {};
+
+// GET home page
+app.get("/", async (req, res) => {
+  totalCorrect = 0;
+  await nextQuestion();
+  console.log(currentQuestion);
+  res.render("index.ejs", { question: currentQuestion });
+});
+
+// POST a new post
+app.post("/submit", (req, res) => {
+  let answer = req.body.answer.trim();
+  let isCorrect = false;
+  if (currentQuestion.capital.toLowerCase() === answer.toLowerCase()) {
+    totalCorrect++;
+    console.log(totalCorrect);
+    isCorrect = true;
   }
+
+  nextQuestion();
+  res.render("index.ejs", {
+    question: currentQuestion,
+    wasCorrect: isCorrect,
+    totalScore: totalCorrect,
+  });
+});
+
+async function nextQuestion() {
+  const randomCountry = quiz[Math.floor(Math.random() * quiz.length)];
+
+  currentQuestion = randomCountry;
 }
 
-// Get Next Question
-async function nextQuestion() {
-  if (quiz.length === 0) {
-    await fetc
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
